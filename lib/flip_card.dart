@@ -180,7 +180,7 @@ class FlipCardState extends State<FlipCard>
       fit: StackFit.passthrough,
       children: <Widget>[
         frontPositioning(_buildContent(front: true)),
-        if (!widget.isTest) backPositioning(_buildContent(front: false)),
+        backPositioning(_buildContent(front: false)),
       ],
     );
 
@@ -196,6 +196,10 @@ class FlipCardState extends State<FlipCard>
   }
 
   Widget _buildContent({required bool front}) {
+    if (front != isFront && widget.isTest) {
+      return const SizedBox.shrink();
+    }
+
     /// pointer events that would reach the backside of the card should be
     /// ignored
     return IgnorePointer(
