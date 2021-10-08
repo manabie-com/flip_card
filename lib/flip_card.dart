@@ -54,6 +54,7 @@ class FlipCard extends StatefulWidget {
   final BoolCallback? onFlipDone;
   final FlipCardController? controller;
   final Fill fill;
+  final bool isTest;
 
   /// When enabled, the card will flip automatically when touched. This behavior
   /// can be disabled if this is not desired. To manually flip a card from your
@@ -94,6 +95,7 @@ class FlipCard extends StatefulWidget {
     this.flipOnTouch = true,
     this.alignment = Alignment.center,
     this.fill = Fill.none,
+    this.isTest = false,
   }) : super(key: key);
 
   @override
@@ -178,7 +180,7 @@ class FlipCardState extends State<FlipCard>
       fit: StackFit.passthrough,
       children: <Widget>[
         frontPositioning(_buildContent(front: true)),
-        backPositioning(_buildContent(front: false)),
+        if (!widget.isTest) backPositioning(_buildContent(front: false)),
       ],
     );
 
