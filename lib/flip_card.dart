@@ -9,6 +9,11 @@ enum FlipDirection {
   HORIZONTAL,
 }
 
+enum CardSide {
+  FRONT,
+  BACK,
+}
+
 enum Fill { none, fillFront, fillBack }
 
 class AnimationCard extends StatelessWidget {
@@ -55,6 +60,7 @@ class FlipCard extends StatefulWidget {
   final FlipCardController? controller;
   final Fill fill;
   final bool isTest;
+  final CardSide side;
 
   /// When enabled, the card will flip automatically when touched. This behavior
   /// can be disabled if this is not desired. To manually flip a card from your
@@ -96,11 +102,12 @@ class FlipCard extends StatefulWidget {
     this.alignment = Alignment.center,
     this.fill = Fill.none,
     this.isTest = false,
+    this.side = CardSide.FRONT,
   }) : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return FlipCardState();
+    return FlipCardState(this.side == CardSide.FRONT);
   }
 }
 
@@ -110,13 +117,18 @@ class FlipCardState extends State<FlipCard>
   Animation<double>? _frontRotation;
   Animation<double>? _backRotation;
 
-  bool isFront = true;
+  bool isFront;
+
+  FlipCardState(this.isFront);
 
   @override
   void initState() {
     super.initState();
     controller = AnimationController(
-        duration: Duration(milliseconds: widget.speed), vsync: this);
+      value: isFront ? 0.0 : 1.0,
+      duration: Duration(milliseconds: widget.speed),
+      vsync: this,
+    );
     _frontRotation = TweenSequence(
       [
         TweenSequenceItem<double>(
@@ -143,30 +155,28 @@ class FlipCardState extends State<FlipCard>
         ),
       ],
     ).animate(controller!);
-    controller!.addStatusListener((status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
-        if (widget.onFlipDone != null) widget.onFlipDone!(isFront);
-      }
-    });
 
     widget.controller?.state = this;
   }
 
-  void toggleCard() {
-    if (widget.onFlip != null) {
-      widget.onFlip!();
-    }
+  @override
+  void didUpdateWidget(FlipCard oldWidget) {
+    widget.controller?.state ??= this;
+  }
 
+  /// Flip the card
+  /// If awaited, returns after animation completes.
+  Future<void> toggleCard() async {
+    widget.onFlip?.call();
+
+    final isFrontBefore = isFront;
     controller!.duration = Duration(milliseconds: widget.speed);
-    if (isFront) {
-      controller!.forward();
-    } else {
-      controller!.reverse();
-    }
 
-    setState(() {
-      isFront = !isFront;
+    final animation = isFront ? controller!.forward() : controller!.reverse();
+    animation.whenComplete(() {
+      if (widget.onFlipDone != null) widget.onFlipDone!(isFront);
+      if (!mounted) return;
+      setState(() => isFront = !isFrontBefore);
     });
   }
 
